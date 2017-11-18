@@ -79,7 +79,7 @@ def train():
     # load model
     cnn = CNN()
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam()
+    optimizer = optim.Adam(cnn.parameters())
     cnn.cuda()
     criterion.cuda()
 
@@ -120,4 +120,7 @@ def train():
         f.write('\n')
     np.savetxt('loss_pytorch_np.csv', loss_history)
     np.savetxt('time_pytorch_np.csv', time_history)
+
+if __name__ == '__main__':
+    train()
 
