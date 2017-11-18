@@ -108,6 +108,9 @@ def train():
         loss_history.append(loss_cum/N)
         time_history.append(time_cum)
 
+    # save histories
+    # np.savetxt('loss_pytorch_np.csv', loss_history)
+    # np.savetxt('time_pytorch_np.csv', time_history)
     with open('./loss_pytorch.csv', 'w') as f:
         f.write('pytorch')
         for l in loss_history:
@@ -120,8 +123,8 @@ def train():
             f.write(',' + str(t))
         f.write('\n')
     print('saved time history')
-    # np.savetxt('loss_pytorch_np.csv', loss_history)
-    # np.savetxt('time_pytorch_np.csv', time_history)
+    # save models
+    torch.save(cnn.state_dict(), os.path.join(MODEL_PATH, 'models.pth'))
 
 if __name__ == '__main__':
     train()
