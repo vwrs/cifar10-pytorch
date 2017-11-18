@@ -57,11 +57,11 @@ def load_CIFAR10():
     trainset = CIFAR10(root='./CIFAR10', train=True,
                                             download=True, transform=transform)
     trainloader = DataLoader(trainset, batch_size=opt.batch_size,
-                                              shuffle=True, num_workers=1)
+                                              shuffle=True, num_workers=1, pin_memory=True)
     testset = CIFAR10(root='./CIFAR10', train=False,
                                            download=True, transform=transform)
     testloader = DataLoader(testset, batch_size=opt.batch_size,
-                                         shuffle=False, num_workers=1)
+                                         shuffle=False, num_workers=1, pin_memory=True)
     return (trainloader, testloader)
 
 def show_progress(e,b,b_total,loss):
@@ -113,13 +113,15 @@ def train():
         for l in loss_history:
             f.write(',' + str(l))
         f.write('\n')
+    print('saved loss history')
     with open('./time_pytorch.csv', 'w') as f:
         f.write('pytorch')
         for t in time_history:
             f.write(',' + str(t))
         f.write('\n')
-    np.savetxt('loss_pytorch_np.csv', loss_history)
-    np.savetxt('time_pytorch_np.csv', time_history)
+    print('saved time history')
+    # np.savetxt('loss_pytorch_np.csv', loss_history)
+    # np.savetxt('time_pytorch_np.csv', time_history)
 
 if __name__ == '__main__':
     train()
