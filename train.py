@@ -64,8 +64,8 @@ def load_CIFAR10():
                                          shuffle=False, num_workers=1, pin_memory=True)
     return (trainloader, testloader)
 
-def show_progress(e,b,b_total,loss):
-    sys.stdout.write("\r%3d: [%5d / %5d] loss: %f" % (e,b,b_total,loss))
+def show_progress(e,b,b_total,loss,acc):
+    sys.stdout.write("\r%3d: [%5d / %5d] loss: %f acc: %f" % (e,b,b_total,loss,acc))
     sys.stdout.flush()
 
 def train():
@@ -87,9 +87,11 @@ def train():
     # train
     # ==========================
     loss_history = []
+    acc_history = []
     time_history = []
     for epoch in range(opt.epochs):
         loss_cum = 0.0
+        acc_cum = 0.0
         time_cum = 0.0
         for i, (imgs, labels) in enumerate(trainloader):
             imgs, labels = Variable(imgs.cuda()), Variable(labels.cuda())
@@ -101,22 +103,36 @@ def train():
             loss.backward()
             optimizer.step()
             time_cum += time.time() - start
-            loss_cum += loss.data[0]
 
-            show_progress(epoch+1, i+1, N, loss.data[0])
-        print('\t mean: %f' % (loss_cum/N))
+            loss_cum += loss.data[0]
+            # calc accuracy
+            _, predicted = torch.max(outputs.data, 1)
+            total = labels.size(0)
+            correct = (predicted == labels).sum()
+            acc_cum += collect/total
+            show_progress(epoch+1, i+1, N, loss.data[0], 100*collect/total)
+
+        print('\t mean acc: %f' % (acc_cum/N))
         loss_history.append(loss_cum/N)
+        acc_history.append(acc_cum/N)
         time_history.append(time_cum)
 
     # save histories
-    # np.savetxt('loss_pytorch_np.csv', loss_history)
-    # np.savetxt('time_pytorch_np.csv', time_history)
+    # np.savetxt('loss_pytorch.csv', loss_history)
+    # np.savetxt('acc_pytorch.csv', acc_history)
+    # np.savetxt('time_pytorch.csv', time_history)
     with open('./loss_pytorch.csv', 'w') as f:
         f.write('pytorch')
         for l in loss_history:
             f.write(',' + str(l))
         f.write('\n')
     print('saved loss history')
+    with open('./acc_pytorch.csv', 'w') as f:
+        f.write('pytorch')
+        for l in acc_history:
+            f.write(',' + str(l))
+        f.write('\n')
+    print('saved acc history')
     with open('./time_pytorch.csv', 'w') as f:
         f.write('pytorch')
         for t in time_history:
