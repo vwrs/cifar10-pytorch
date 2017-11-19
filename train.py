@@ -13,18 +13,13 @@ opt = parser.parse_args()
 
 os.environ["CUDA_VISIBLE_DEVICES"] = opt.gpu
 
-
-import sys
 import time
-import pickle
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torchvision import transforms
-from torchvision.datasets import CIFAR10
-from torch.utils.data import DataLoader
 from torch.autograd import Variable
+from utils import *
 
 class CNN(nn.Module):
     def __init__(self):
@@ -48,25 +43,6 @@ class CNN(nn.Module):
         x = x.view(-1, 128*8*8)
         x = self.classifier(x)
         return x
-
-def load_CIFAR10():
-    transform = transforms.Compose(
-        [transforms.ToTensor(),
-         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-
-    trainset = CIFAR10(root='./CIFAR10', train=True,
-                                            download=True, transform=transform)
-    trainloader = DataLoader(trainset, batch_size=opt.batch_size,
-                                              shuffle=True, num_workers=1, pin_memory=True)
-    testset = CIFAR10(root='./CIFAR10', train=False,
-                                           download=True, transform=transform)
-    testloader = DataLoader(testset, batch_size=opt.batch_size,
-                                         shuffle=False, num_workers=1, pin_memory=True)
-    return (trainloader, testloader)
-
-def show_progress(e,b,b_total,loss,acc):
-    sys.stdout.write("\r%3d: [%5d / %5d] loss: %f acc: %f" % (e,b,b_total,loss,acc))
-    sys.stdout.flush()
 
 def train():
     # load dataset
@@ -105,42 +81,36 @@ def train():
             time_cum += time.time() - start
 
             loss_cum += loss.data[0]
-            # calc accuracy
-            _, predicted = torch.max(outputs.data, 1)
-            total = labels.size(0)
-            correct = (predicted == labels).sum()
-            acc_cum += collect/total
-            show_progress(epoch+1, i+1, N, loss.data[0], 100*collect/total)
+            acc = accuracy(outputs, labels.data)
+            acc_cum += acc
+            show_progress(epoch+1, i+1, N, loss.data[0], acc)
 
         print('\t mean acc: %f' % (acc_cum/N))
         loss_history.append(loss_cum/N)
         acc_history.append(acc_cum/N)
         time_history.append(time_cum)
 
+    # test accuracy
+    cnn.eval()
+    correct, total = 0, 0
+    for imgs, labels in testloader:
+        imgs, labels = Variable(imgs.cuda()), labels.cuda()
+        outputs = cnn(imgs)
+        _, pred = torch.max(outputs.data, 1)
+        total += labels.size(0)
+        correct += (pred == labels).sum()
+
+    print('======================')
+    print('epoch: %d  batch size: %d' % (opt.epochs, opt.batch_size))
+    print('mean accuracy on %d test images: %f' % (total, correct/total))
+
+
     # save histories
-    # np.savetxt('loss_pytorch.csv', loss_history)
-    # np.savetxt('acc_pytorch.csv', acc_history)
-    # np.savetxt('time_pytorch.csv', time_history)
-    with open('./loss_pytorch.csv', 'w') as f:
-        f.write('pytorch')
-        for l in loss_history:
-            f.write(',' + str(l))
-        f.write('\n')
-    print('saved loss history')
-    with open('./acc_pytorch.csv', 'w') as f:
-        f.write('pytorch')
-        for l in acc_history:
-            f.write(',' + str(l))
-        f.write('\n')
-    print('saved acc history')
-    with open('./time_pytorch.csv', 'w') as f:
-        f.write('pytorch')
-        for t in time_history:
-            f.write(',' + str(t))
-        f.write('\n')
-    print('saved time history')
+    anp.savetxt('loss_history.csv', loss_history)
+    np.savetxt('acc_history.csv', acc_history)
+    np.savetxt('time_history_.csv', time_history)
     # save models
-    torch.save(cnn.state_dict(), os.path.join(MODEL_PATH, 'models.pth'))
+    torch.save(cnn.state_dict(), 'model.pth'))
 
 if __name__ == '__main__':
     train()
