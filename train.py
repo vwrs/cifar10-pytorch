@@ -21,6 +21,7 @@ import torch.optim as optim
 from torch.autograd import Variable
 from utils import *
 
+
 class CNN(nn.Module):
     def __init__(self):
         super().__init__()
@@ -44,6 +45,7 @@ class CNN(nn.Module):
         x = self.classifier(x)
         return x
 
+
 def train():
     # load dataset
     # ==========================
@@ -58,7 +60,6 @@ def train():
     optimizer = optim.Adam(cnn.parameters())
     cnn.cuda()
     criterion.cuda()
-
 
     # train
     # ==========================
@@ -104,13 +105,13 @@ def train():
     print('epoch: %d  batch size: %d' % (opt.epochs, opt.batch_size))
     print('mean accuracy on %d test images: %f' % (total, correct/total))
 
-
     # save histories
     anp.savetxt('loss_history.csv', loss_history)
     np.savetxt('acc_history.csv', acc_history)
     np.savetxt('time_history_.csv', time_history)
     # save models
-    torch.save(cnn.state_dict(), 'model.pth'))
+    torch.save(cnn.state_dict(), 'model.pth')
+
 
 if __name__ == '__main__':
     train()
